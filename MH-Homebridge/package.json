@@ -1,0 +1,84 @@
+{
+  "private": false,
+  "displayName": "Homebridge MagicHome Dynamic Platform",
+  "name": "homebridge-magichome-dynamic-platform",
+  "contributors": [
+    "Zachary Avino ZackAvino@Zacknetic.org",
+    "Igor Ramos"
+  ],
+  "version": "1.9.3-beta.4",
+  "description": "Dynamically Discover and Add MagicHome Bulbs and Controllers to Homebrige.",
+  "license": "Apache-2.0",
+  "files": [
+    "LICENSE",
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zacknetic/HomebridgeMagicHome-DynamicPlatform"
+  },
+  "bugs": {
+    "url": "https://github.com/Zacknetic/HomebridgeMagicHome-DynamicPlatform/issues"
+  },
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/Zacknetic"
+    },
+    {
+      "type": "paypal",
+      "url": "https://www.paypal.com/paypalme/ZacharyAvino"
+    }
+  ],
+
+  "main": "dist/index.js",
+  "engines": {
+    "homebridge": "^1.5.0 || 2.0.0-beta.0",
+    "node": "^14.21.1 || ^16.18.1 || ^18.12.1"
+  },
+  "scripts": {
+    "rebuild": "rm package-lock.json && rm -r node_modules/ && npm install",
+    "lint": "eslint src/**.ts",
+    "watch": "npm run build && nodemon",
+    "build": "rimraf ./dist && tsc",
+    "prepublishOnly": "npm run lint && npm run build",
+    "test:watch": "ts-mocha --timeout 10000 --watch-extensions ts --watch --watch-files src 'src/specs/*.spec.ts'"
+  },
+  "keywords": [
+    "homebridge-plugin",
+    "hoobs",
+    "magichome",
+    "magic",
+    "home",
+    "lednet",
+    "Magic Home",
+    "magic home",
+    "outlet",
+    "dimmer",
+    "rgb",
+    "rgbw",
+    "rgbww",
+    "LEDnet",
+    "wowled",
+    "flux_led",
+    "smart lights"
+  ],
+  "dependencies": {
+    "homebridge-lib": "^5.1.14"
+  },
+  "devDependencies": {
+    "@types/expect": "^24.3.0",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^16.10.9",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "@typescript-eslint/parser": "^5.0.0",
+    "eslint": "^8.0.1",
+    "homebridge": "^1.5.0",
+    "mocha": "^10.0.0",
+    "nodemon": "^2.0.13",
+    "rimraf": "^3.0.2",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.3.0",
+    "typescript": "^4.4.4"
+  }
+}

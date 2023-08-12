@@ -1,0 +1,85 @@
+        # sample message for original LEDENET protocol (w/o checksum at end)
+        #  0  1  2  3  4
+        # 56 90 fa 77 aa
+        #  |  |  |  |  |
+        #  |  |  |  |  terminator
+        #  |  |  |  blue
+        #  |  |  green
+        #  |  red
+        #  head
+
+        
+        # sample message for 8-byte transmit protocols (w/ checksum at end)
+        #  0  1  2  3  4  5  6  7
+        # 31 90 fa 77 00 00 0f 41 
+		#  |  |  |  |  |  |  |  |
+        #  |  |  |  |  |  |  |	checksum (actual checksum is 241 but we truncate all but the last 2 digits)
+        #  |  |  |  |  |  |  terminator
+        #  |  |  |  |  |  write mask / cold white (see below)
+        #  |  |  |  |  warm white
+        #  |  |  |  blue
+        #  |  |  green
+        #  |  red
+        #  persistence (31 for true / 41 for false) determines if color is retained after power loss
+        #
+		## example ##  echo -n 0:  31 00 00 ff db 0f f0 0a | xxd -r|socat tcp:192.168.1.82:5577 -
+		#
+        # byte 5 can have different values depending on the type
+        # of device:
+        # For devices that support 2 types of white value (warm and cold
+        # white) this value is the cold white value. These use the LEDENET
+        # protocol. If a second value is not given, reuse the first white value.
+        #
+        # For devices that cannot set both rbg and white values at the same time
+        # (including devices that only support white) this value
+        # specifies if this command is to set white value (0f) or the rgb
+        # value (f0). 
+        #
+        # For all other rgb and rgbw devices, the value is 00
+		#
+		#
+		# Compatable Devices
+
+        # sample message for 9-byte LEDENET transmit protocol (w/ checksum at end)
+        #  0  1  2  3  4  5  6  7  8
+        # 31 bc c1 ff 00 00 f0 0f ac 
+		#  |  |  |  |  |  |  |  |  |
+        #  |  |  |  |  |  |  |  |  checksum (actual checksum is 3AC but we truncate all but the last 2 digits)
+        #  |  |  |  |  |  |  |  terminator
+        #  |  |  |  |  |  |  write mode (f0 colors, 0f whites, 00 colors & whites)
+        #  |  |  |  |  |  cold white
+        #  |  |  |  |  warm white
+        #  |  |  |  blue
+        #  |  |  green
+        #  |  red
+        #  persistence (31 for true / 41 for false) determines if color is retained after power loss
+        #
+		## example ## echo -n 0:31 4a ff ed ff ff 00 0f 74 | xxd -r|socat tcp:192.168.1.16:5577 -
+		
+		
+		
+		
+		# sample message for 14-byte LEDENET receive protocol
+		# 0  1  2  3  4  5  6  7  8  9 10 11 12 13
+		#81 35 23 61 01 1c 00 00 00 00 03 ff 0f 68>
+		# |  |  |  |  |  |  |  |  |	|  |  |  |  |
+		# |  |  |  |  |  |  |  |  |	|  |  |  |
+		# |  |  |  |  |  |  |  |  |	|  |  |
+		# |  |  |  |  |  |  |  |  |	|  |  cold white value
+		# |  |  |  |  |  |  |  |  |	|
+		# |  |  |  |  |  |  |  |  |  warm white value
+		# |  |  |  |  |  |  |  |  blue
+		# |  |  |  |  |  |  |  green
+		# |  |  |  |  |  |  red
+		# |  |  |  |  |  
+		# |  |  |  |  
+		# |  |  |  ??? pattern ???
+		# |  |  power (23 on : 24 off)
+		# |  bulb type (44 rgbw : 35: rgbww)
+		 
+ 
+		Example:
+		
+		# 81 44 24 61 01 05 ff ff ff 00 09 00 00 56 rgbw
+		# 81 35 23 61 01 1c 2e 00 ff 00 03 00 f0 77 rgbww
+		 

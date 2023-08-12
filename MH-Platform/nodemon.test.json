@@ -1,0 +1,8 @@
+{
+  "watch": [
+    "src \"src/specs/*.spec.ts\""
+  ],
+  "ext": "ts",
+  "ignore": [],
+  "exec": "ts-mocha --timeout 100000"
+}

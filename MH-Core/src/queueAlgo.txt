@@ -1,0 +1,44 @@
+goals for device command queue:
+1. A device can be sent multiple commands from the host without host needing to think about if it is ready or not
+2. The algorithm remains simple and prevents the need for "async hell"
+3. The middleware does not send the next command to the device until reaches one of two states:
+    a. the device responds
+    b. a timeout limit has been reached
+
+General Algorithm:
+
+1. Add each command to the promise queue : note* add a priority queue for state requests?
+    a. prepare the command and command options
+        i. set current retries equal to totalRetries so that we may later calculate how many retries it took
+        ii. ensure the command is valid
+        iii. give it a firm handshake
+2. Iterate over each command in the queue,
+3. At the beginning of each command
+    a. clear a timeout which will later be used for the return value
+    b. set a global scope "latestCommand" which is replaced with every succeeding command
+4. Move to the next command if:
+    a. the device responds
+    b. timeout has been reached
+5. At the end of each command, start a new timer which will execute if not canceled by yet another command
+6. Once the final command is written and the timer is executed test if the command options has current retries
+    a. current retries > 0
+        i. query the device for its state
+        ii. compare this state to the sent command and check validity
+            一. valid: return current queried state
+            二. invalid:
+                あ. subtract 1 from current retries in command options
+                べ. requeue the command
+    b. current retries <= 0
+        i. original command had retries but ran out
+            一. reject with negative command code and last known state (in the calling function, we report the device as off)
+        ii. original command had no retries
+            一. resolve with positive command code and the latest command converted to state
+
+
+Handling power commands:
+    1. if(lastPowerState != currentPowerCommand)
+        true: continue
+        false: reject with negative command code
+    2. queue command 
+    3. update a variable "lastPowerState" with the power command 
+    4. create a timeout which resets lastPowerState to null after 2000ms

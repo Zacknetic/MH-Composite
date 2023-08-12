@@ -1,0 +1,42 @@
+{
+  "bridge": {
+    "name": "HomebridgeDev",
+    "username": "DD:FB:FF:DD:FF:GG",
+    "manufacturer": "homebridge.io",
+    "model": "homebridge",
+    "port": 51826,
+    "pin": "666-66-666"
+  },
+  "description": "This is an example configuration file with one fake accessory and one fake platform. You can use this as a template for creating your own configuration file containing devices you actually own.",
+  "ports": {
+    "start": 52100,
+    "end": 52150,
+    "comment": "This section is used to control the range of ports that separate accessory (like camera or television) should be bind to."
+  },
+  "accessories": [],
+  "platforms": [
+    {
+      "platform": "homebridge-magichome-dynamic-platform",
+      "name": "MagicHome Dynamic Platform",
+      "pruning": {
+        "pruneMissingCachedAccessories": false,
+        "restartsBeforeMissingAccessoriesPruned": 3,
+        "pruneAllAccessoriesNextRestart": false
+      },
+      "whiteEffects": {
+        "simultaniousDevicesColorWhite": true,
+        "colorWhiteThreshold": 10,
+        "colorWhiteThresholdSimultaniousDevices": 50,
+        "colorOffThresholdSimultaniousDevices": 1
+      },
+      "deviceManagement": {
+        "blacklistOrWhitelist": "blacklist",
+        "blacklistedUniqueIDs": [""]
+      },
+      "advancedOptions": {
+        "namesWithMacAddress": false,
+        "logLevel": 5
+      }
+    }
+  ]
+}
