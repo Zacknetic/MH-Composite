@@ -36,6 +36,7 @@ export class HomebridgeMagichomeDynamicPlatformAccessory {
   protected adaptiveLightingService;
   protected newAccessoryCommand: IPartialAccessoryCommand = {};
   protected latestAccessoryCommand: IAccessoryCommand;
+  protected debounceTimer: NodeJS.Timeout | null = null;
 
   public accessoryState: IAccessoryState;
 
@@ -54,8 +55,6 @@ export class HomebridgeMagichomeDynamicPlatformAccessory {
   waitingSendoff: boolean;
   resistOff: boolean;
   HSVTimeout: NodeJS.Timeout;
-  powerTimeout: NodeJS.Timeout;
-  timeout: NodeJS.Timeout;
   processAccessoryCommandTimeout: NodeJS.Timeout;
   useBackupHSV: boolean;
   backupHSV: any;
@@ -91,51 +90,42 @@ export class HomebridgeMagichomeDynamicPlatformAccessory {
   }
 
   async setOn(value: CharacteristicValue) {
-    this.powerTimeout = setTimeout(() => {
-      if (!this.resistOff) {
-        this.accessoryState.isOn = value as boolean;
-        const partialAccessoryCommand: IPartialAccessoryCommand = {
-          isOn: value as boolean,
-          isPowerCommand: true,
-        };
-        this.processAccessoryCommand(partialAccessoryCommand);
-      }
-    }, 20);
+    this.accessoryState.isOn = value as boolean;
+    const partialAccessoryCommand: IPartialAccessoryCommand = {
+      isOn: value as boolean,
+      isPowerCommand: true,
+    };
+    this.processAccessoryCommand(partialAccessoryCommand);
   }
 
   setHue(value: CharacteristicValue) {
-    this.resistSetOnCommand();
     this.accessoryState.HSV.hue = value as number;
-    const partialAccessoryCommand: IPartialAccessoryCommand = {
-      HSV: { hue: value as number },
-    };
-    this.processAccessoryCommand(partialAccessoryCommand);
+    this.scheduleAccessoryCommand();
   }
 
   async setSaturation(value: CharacteristicValue) {
-    this.resistSetOnCommand();
     this.accessoryState.HSV.saturation = value as number;
-    // const partialAccessoryCommand: IPartialAccessoryCommand = { HSV: { saturation: value as number } };
-    // this.processAccessoryCommand(partialAccessoryCommand);
+    this.scheduleAccessoryCommand();
   }
 
   async setValue(value: CharacteristicValue) {
-    this.resistSetOnCommand();
     this.accessoryState.HSV.value = value as number;
-    const partialAccessoryCommand: IPartialAccessoryCommand = {
-      HSV: { value: value as number },
-    };
-    this.processAccessoryCommand(partialAccessoryCommand);
+    this.scheduleAccessoryCommand();
   }
 
   setColorTemperature(value: CharacteristicValue) {
-    this.resistSetOnCommand();
     this.accessoryState.TB.temperature = value as number;
-    const partialAccessoryCommand: IPartialAccessoryCommand = {
-      TB: { temperature: value as number },
-    };
-    // console.log('set color temp', value)
-    this.processAccessoryCommand(partialAccessoryCommand);
+    this.scheduleAccessoryCommand();
+  }
+
+  private scheduleAccessoryCommand() {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+
+    this.debounceTimer = setTimeout(() => {
+      this.processAccessoryCommand(this.accessoryState);
+    }, 100); // 100 milliseconds debounce time
   }
 
   setConfiguredName(value: CharacteristicValue) {
@@ -143,15 +133,6 @@ export class HomebridgeMagichomeDynamicPlatformAccessory {
     this.logs.warn(`Renaming device to ${name}`);
     this.accessory.context.displayName = name;
     this.api.updatePlatformAccessories([this.accessory]);
-  }
-
-  resistSetOnCommand() {
-    this.resistOff = true;
-    clearTimeout(this.HSVTimeout);
-    clearTimeout(this.powerTimeout);
-    this.HSVTimeout = setTimeout(() => {
-      this.resistOff = false;
-    }, 50);
   }
 
   identifyLight() {
@@ -228,29 +209,24 @@ export class HomebridgeMagichomeDynamicPlatformAccessory {
   protected processAccessoryCommand(
     partialAccessoryCommand: IPartialAccessoryCommand
   ) {
-    if (this.waitingSendoff) {
-      return;
-    }
     try {
-      this.waitingSendoff = true;
       this.skipNextStatusUpdate();
-      setTimeout(() => {
-        this.waitingSendoff = false;
-        const sanitizedAcessoryCommand = this.completeAccessoryCommand(
-          partialAccessoryCommand
+
+      this.waitingSendoff = false;
+      const sanitizedAcessoryCommand = this.completeAccessoryCommand(
+        partialAccessoryCommand
+      );
+      if (partialAccessoryCommand.isPowerCommand) {
+        this.controller.setOn(sanitizedAcessoryCommand.isOn);
+      } else {
+        const { deviceCommand, commandOptions } =
+          this.accessoryCommandToDeviceCommand(sanitizedAcessoryCommand);
+        this.sendCommand(
+          deviceCommand,
+          commandOptions,
+          sanitizedAcessoryCommand
         );
-        if (partialAccessoryCommand.isPowerCommand) {
-          this.controller.setOn(sanitizedAcessoryCommand.isOn);
-        } else {
-          const { deviceCommand, commandOptions } =
-            this.accessoryCommandToDeviceCommand(sanitizedAcessoryCommand);
-          this.sendCommand(
-            deviceCommand,
-            commandOptions,
-            sanitizedAcessoryCommand
-          );
-        }
-      }, 50);
+      }
     } catch (error) {
       // console.log('processAccessoryCommand: ', error);
     }
@@ -259,7 +235,6 @@ export class HomebridgeMagichomeDynamicPlatformAccessory {
   protected async skipNextStatusUpdate() {
     if (this.skipNextAccessoryStatusUpdate) return;
     this.skipNextAccessoryStatusUpdate = true;
-    clearTimeout(this.periodicScanTimeout);
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
     setTimeout(() => {
@@ -564,8 +539,8 @@ export class HomebridgeMagichomeDynamicPlatformAccessory {
     );
     this.service
       .getCharacteristic(this.hap.Characteristic.Hue)
-      .onSet(this.setHue.bind(this));
-    // .onGet(this.getHue.bind(this));
+      .onSet(this.setHue.bind(this))
+      .onGet(this.getHue.bind(this));
   }
 
   addSaturationCharacteristic() {
